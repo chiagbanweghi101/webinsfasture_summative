@@ -176,6 +176,33 @@
                 width: 100%;
             }
         }
+
+        .file-upload {
+            display: flex;
+            gap: 1rem;
+            margin: 2rem 0;
+            align-items: center;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-label {
+            flex: 1;
+            padding: 0.8rem 1.5rem;
+            background-color: var(--status-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .file-label:hover {
+            background-color: var(--btn-secondary-bg);
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -188,6 +215,15 @@
             <button id="stopBtn" class="btn secondary" disabled>Stop Recording</button>
         </div>
         <div class="status" id="status">Click 'Start Recording' to begin</div>
+
+        <div class="file-upload">
+            <input type="file" id="audioFile" accept="audio/*" class="file-input">
+            <label for="audioFile" class="file-label">
+                <span>Choose Audio File</span>
+            </label>
+            <button id="uploadBtn" class="btn primary" disabled>Transcribe File</button>
+        </div>
+        <div class="status" id="fileStatus">Select an audio file to begin</div>
 
         <div class="output-container">
             <h2>Transcription Output</h2>
@@ -309,6 +345,109 @@
 
         themeToggle.addEventListener('click', toggleTheme);
         addHoverSpeech(themeToggle, 'Theme toggle button. Click to switch between light and dark mode.');
+
+        // AssemblyAI API Key
+        const ASSEMBLYAI_API_KEY = '8dede3b32ae4468e9a6823ba1fbf31ce';
+
+        // Additional DOM Elements
+        const audioFile = document.getElementById('audioFile');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const fileStatus = document.getElementById('fileStatus');
+
+        // Add hover speech to upload elements
+        addHoverSpeech(audioFile.nextElementSibling, 'Click to choose an audio file for transcription');
+        addHoverSpeech(uploadBtn, 'Click to start transcribing the selected audio file');
+
+        // Handle file selection
+        audioFile.addEventListener('change', () => {
+            if (audioFile.files.length > 0) {
+                uploadBtn.disabled = false;
+                fileStatus.textContent = `Selected file: ${audioFile.files[0].name}`;
+                speak(`File selected: ${audioFile.files[0].name}`);
+            } else {
+                uploadBtn.disabled = true;
+                fileStatus.textContent = 'Select an audio file to begin';
+            }
+        });
+
+        // Handle file upload and transcription
+        uploadBtn.addEventListener('click', async () => {
+            const file = audioFile.files[0];
+            if (!file) return;
+
+            uploadBtn.disabled = true;
+            fileStatus.textContent = 'Uploading file... Please wait.';
+            speak('Starting transcription. Please wait.');
+
+            try {
+                // First, upload the file to AssemblyAI
+                const uploadResponse = await fetch('https://api.assemblyai.com/v2/upload', {
+                    method: 'POST',
+                    headers: {
+                        'authorization': ASSEMBLYAI_API_KEY
+                    },
+                    body: file
+                });
+
+                if (!uploadResponse.ok) {
+                    throw new Error('Failed to upload file');
+                }
+
+                const uploadData = await uploadResponse.json();
+                const audioUrl = uploadData.upload_url;
+
+                // Start transcription
+                const transcriptionResponse = await fetch('https://api.assemblyai.com/v2/transcript', {
+                    method: 'POST',
+                    headers: {
+                        'authorization': ASSEMBLYAI_API_KEY,
+                        'content-type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        audio_url: audioUrl
+                    })
+                });
+
+                if (!transcriptionResponse.ok) {
+                    throw new Error('Failed to start transcription');
+                }
+
+                const transcriptionData = await transcriptionResponse.json();
+                const transcriptId = transcriptionData.id;
+
+                // Poll for transcription completion
+                fileStatus.textContent = 'Transcribing... This may take a few minutes.';
+                
+                let transcript = null;
+                while (!transcript) {
+                    const pollingResponse = await fetch(`https://api.assemblyai.com/v2/transcript/${transcriptId}`, {
+                        headers: {
+                            'authorization': ASSEMBLYAI_API_KEY
+                        }
+                    });
+
+                    const pollingData = await pollingResponse.json();
+
+                    if (pollingData.status === 'completed') {
+                        transcript = pollingData;
+                        break;
+                    } else if (pollingData.status === 'error') {
+                        throw new Error('Transcription failed');
+                    }
+
+                    await new Promise(resolve => setTimeout(resolve, 3000));
+                }
+
+                output.value = transcript.text;
+                fileStatus.textContent = 'Transcription complete!';
+                speak('Transcription complete!');
+            } catch (error) {
+                fileStatus.textContent = `Error: ${error.message}`;
+                speak(`Error: ${error.message}`);
+            } finally {
+                uploadBtn.disabled = false;
+            }
+        });
     </script>
 </body>
 </html> 
