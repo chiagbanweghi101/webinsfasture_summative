@@ -3,10 +3,11 @@
 https://youtu.be/AyEBSBbYMOY
 A full-stack web application that converts speech to text using both real-time speech recognition and audio file transcription.
 
+
 ## Features
 
 - Real-time speech recognition using the Web Speech API
-- Audio file transcription using AssemblyAI API
+- Audio file transcription using AssemblyAI API which is an external api.
 - Modern, responsive user interface
 - Copy-to-clipboard functionality
 - Support for various audio file formats
@@ -38,7 +39,6 @@ A full-stack web application that converts speech to text using both real-time s
    ```bash
    npm start
    ```
-2. Open your browser and navigate to `http://localhost:3000`
 
 ## Usage
 
@@ -72,5 +72,5 @@ A full-stack web application that converts speech to text using both real-time s
 ## Notes
 
 - The Web Speech API requires a modern browser with microphone support
-- AssemblyAI API has rate limits based on your subscription plan
+- AssemblyAI API 
 - Supported audio file formats include MP3, WAV, M4A, and more 
