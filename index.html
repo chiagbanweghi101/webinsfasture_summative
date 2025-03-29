@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech to Text Converter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 2rem;
+        }
+
+        .speech-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn.primary {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .btn.secondary {
+            background-color: #95a5a6;
+            color: white;
+        }
+
+        .status {
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .output-container {
+            margin-top: 2rem;
+        }
+
+        .output-container h2 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+        }
+
+        .output-box {
+            position: relative;
+        }
+
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            resize: vertical;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        #copyBtn {
+            position: absolute;
+            bottom: 1rem;
+            right: 1rem;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                margin: 1rem;
+                padding: 1rem;
+            }
+
+            .speech-controls {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Speech to Text Converter</h1>
+        
+        <div class="speech-controls">
+            <button id="startBtn" class="btn primary">Start Recording</button>
+            <button id="stopBtn" class="btn secondary" disabled>Stop Recording</button>
+        </div>
+        <div class="status" id="status">Click 'Start Recording' to begin</div>
+
+        <div class="output-container">
+            <h2>Transcription Output</h2>
+            <div class="output-box">
+                <textarea id="output" readonly placeholder="Your transcription will appear here..."></textarea>
+                <button id="copyBtn" class="btn secondary">Copy Text</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const output = document.getElementById('output');
+        const copyBtn = document.getElementById('copyBtn');
+        const status = document.getElementById('status');
+
+        // Speech Recognition Setup
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+
+        // Text-to-Speech Setup
+        const speechSynthesis = window.speechSynthesis;
+        let currentUtterance = null;
+
+        function speak(text) {
+            // Cancel any ongoing speech
+            if (currentUtterance) {
+                speechSynthesis.cancel();
+            }
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 1;
+            utterance.pitch = 1;
+            utterance.volume = 1;
+            currentUtterance = utterance;
+            speechSynthesis.speak(utterance);
+        }
+
+        // Add hover speech to buttons
+        function addHoverSpeech(element, text) {
+            element.addEventListener('mouseenter', () => {
+                speak(text);
+            });
+            element.addEventListener('mouseleave', () => {
+                speechSynthesis.cancel();
+            });
+        }
+
+        // Add hover speech to buttons
+        addHoverSpeech(startBtn, 'Start Recording button. Click to begin speaking.');
+        addHoverSpeech(stopBtn, 'Stop Recording button. Click to stop recording.');
+        addHoverSpeech(copyBtn, 'Copy Text button. Click to copy the transcribed text to clipboard.');
+
+        // Real-time Speech Recognition
+        startBtn.addEventListener('click', () => {
+            recognition.start();
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            status.textContent = 'Listening... Speak now!';
+            speak('Recording started. Please speak now.');
+        });
+
+        stopBtn.addEventListener('click', () => {
+            recognition.stop();
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            status.textContent = 'Click "Start Recording" to begin';
+            speak('Recording stopped.');
+        });
+
+        recognition.onresult = (event) => {
+            const transcript = Array.from(event.results)
+                .map(result => result[0].transcript)
+                .join('');
+            
+            output.value = transcript;
+        };
+
+        recognition.onerror = (event) => {
+            status.textContent = `Error: ${event.error}`;
+            speak(`Error: ${event.error}`);
+        };
+
+        // Copy Text
+        copyBtn.addEventListener('click', () => {
+            output.select();
+            document.execCommand('copy');
+            copyBtn.textContent = 'Copied!';
+            speak('Text copied to clipboard');
+            setTimeout(() => {
+                copyBtn.textContent = 'Copy Text';
+            }, 2000);
+        });
+    </script>
+</body>
+</html> 

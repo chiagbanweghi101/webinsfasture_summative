@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech to Text Converter</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Speech to Text Converter</h1>
+        
+        <div class="speech-controls">
+            <button id="startBtn" class="btn primary">Start Recording</button>
+            <button id="stopBtn" class="btn secondary" disabled>Stop Recording</button>
+        </div>
+        <div class="status" id="status">Click 'Start Recording' to begin</div>
+
+        <div class="output-container">
+            <h2>Transcription Output</h2>
+            <div class="output-box">
+                <textarea id="output" readonly placeholder="Your transcription will appear here..."></textarea>
+                <button id="copyBtn" class="btn secondary">Copy Text</button>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html> 
